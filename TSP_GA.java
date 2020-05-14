@@ -1,9 +1,28 @@
 package tsp;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Scanner;
+
 public class TSP_GA {
 
     public static void main(String[] args) {
-
+    	
+    	try {
+			Scanner scanner = new Scanner(new File("example-input-1.txt"));
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine();
+				String[] list = line.split("\\s+");
+				System.out.println(list[0]);
+			}
+			scanner.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+/*
         // Create and add our cities
         City city = new City(60, 200);
         TourManager.addCity(city);
@@ -60,6 +79,6 @@ public class TSP_GA {
         System.out.println("Finished");
         System.out.println("Final distance: " + pop.getFittest().getDistance());
         System.out.println("Solution:");
-        System.out.println(pop.getFittest());
+        System.out.println(pop.getFittest());*/
     }
 }
