@@ -1,30 +1,47 @@
-package algooooo;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
 
+/*
+ * This code was prepared by Muhammet Kürþat Açýkgöz and Ahmet Elburuz Gürbüz
+ * for traveling salesman problem solution. The purpose of this code is to
+ * combine 3 different methods and try to approach the best situation. In
+ * np-hard problems, the aim is not to find the exact result, but to converge to
+ * the exact result as much as possible. In this code, the closest neighbor
+ * method, 2-opt method and simulated annealing method are used together.
+ * 
+ * Muhammet Kürþat AÇIKGÖZ 
+ * Ahmet Elburuz GÜRBÜZ 
+ * 
+ */
 
 public class main {
+	// Global variables initialized
 	static ArrayList<Integer> orders = new ArrayList<Integer>();
+	static ArrayList<Integer> ordersTemp = new ArrayList<Integer>();
 	static ArrayList<City> cities = new ArrayList<City>();
 	static ArrayList<City> route = new ArrayList<City>();
 	static int totalDistance = 0;
 
-	public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
-		// TODO Auto-generated method stub
+	public static void main(String[] args) throws IOException {
+
 		int count = 0;
 		int totalX = 0;
 		int totalY = 0;
 
+		long startTime = System.currentTimeMillis();
+
+		// In this try catch file is read and added to global "cities" array list as
+		// city objects
 		try {
-			Scanner scanner = new Scanner(new File("example-input-1.txt"));
+			Scanner scanner = new Scanner(new File("example-input-3.txt"));
 			while (scanner.hasNextLine()) {
 				String line = scanner.nextLine();
 				String[] list = line.split(" ");
@@ -47,105 +64,157 @@ public class main {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+
+		// Average amount of x an y's calculated
 		int averageX = totalX / count;
 		int averageY = totalY / count;
 
+		// Closest city to (average x, average y) found
 		City midPoint = new City(averageX, averageY, -1);
 
+		@SuppressWarnings("unchecked")
 		ArrayList<City> notVisitedCities = (ArrayList<City>) cities.clone();
 
-		City currentPoint = findNearestPoint(notVisitedCities, midPoint);
-		City startPoint = currentPoint;
-		orders.add(currentPoint.getOrder());
-		notVisitedCities.remove(currentPoint);
+		// This if condition for small inputs to find exact solution with brute force
+		if (notVisitedCities.size() < 15) {
+			route.add(notVisitedCities.get(0));
+			notVisitedCities.remove(0);
 
-		currentPoint = findNearestPoint(notVisitedCities, midPoint);
-		City secondStartPoint = currentPoint;
-		orders.add(currentPoint.getOrder());
-		notVisitedCities.remove(currentPoint);
+			bruteForceTSP(notVisitedCities);
+			DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+			LocalDateTime now = LocalDateTime.now();
+			System.out.println("total distance " + totalDistance + " " + dtf.format(now));
 
-		totalDistance = startPoint.distanceTo(secondStartPoint);
-
-		int size = notVisitedCities.size();
-		for (int i = 0; i < size / 2; i++) {
-			currentPoint = findNearestPoint(notVisitedCities, currentPoint);
-			orders.add(currentPoint.getOrder());
-			notVisitedCities.remove(currentPoint);
-		}
-
-		Collections.reverse(orders);
-		currentPoint = startPoint;
-
-		while (notVisitedCities.size() != 0) {
-			currentPoint = findNearestPoint(notVisitedCities, currentPoint);
-			orders.add(currentPoint.getOrder());
-			notVisitedCities.remove(currentPoint);
-		}
-
-		totalDistance += cities.get(orders.get(0)).distanceTo(cities.get(orders.get(orders.size() - 1)));
-		
-		
-		PrintWriter writer = new PrintWriter("file-3.txt", "UTF-8");///////////////////
-		
-
-		//System.out.println(totalDistance);
-		writer.println(totalDistance);
-
-		route.clear();
-		for (int i = 0; i < orders.size(); i++) {
-			route.add(cities.get(orders.get(i)));
-			//Repository.addCity(route.get(route.size()-1));
-			// System.out.println(route.get(i).getOrder());
-		}
-		
-		int distance = 0;
-		System.out.println("first " + totalDistance);
-		for (int i = 0; i < 1000000; i++) {
-			optimize();
-			int dis = totalDistanceCalculator(route);
-			
-			if (distance != dis) {
-				
-				if (dis < totalDistance) {
-					distance = dis;
-					totalDistance = dis;
-					System.out.print(i + " -> " + dis + " ");
-					//writer.print(i + " -> " + dis + " ");
-					DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
-					LocalDateTime now = LocalDateTime.now();
-					System.out.println(dtf.format(now));
-					//writer.println(dtf.format(now));
-					for (int j = 0; j < orders.size(); j++) {
-						//writer.println(route.get(j).getOrder());
-						//System.out.println(route.get(j).getOrder());
-					}
-					//System.out.println("------------");
-					//writer.println("------------");
-				}
-			} else {
-				break;
-				//swap4Route();
-				// Collections.shuffle(route);
+			for (int i = 0; i < orders.size(); i++) {
+				System.out.println(orders.get(i));
 			}
 
-		}
-		
-		for (int i = 0; i < orders.size(); i++) {
-			//route.add(cities.get(orders.get(i)));
-			Repository.addCity(route.get(i));
-			// System.out.println(route.get(i).getOrder());
+			System.out.print(orders.get(0));
+
+		} else { // if input size is not small to use brute force gonna use 2-opt and simulated
+					// annealling because tsp is np hard problem
+			City currentPoint = findNearestPoint(notVisitedCities, midPoint);
+			City startPoint = currentPoint;
+			orders.add(currentPoint.getOrder());
+			notVisitedCities.remove(currentPoint);
+
+			currentPoint = findNearestPoint(notVisitedCities, midPoint);
+			City secondStartPoint = currentPoint;
+			orders.add(currentPoint.getOrder());
+			notVisitedCities.remove(currentPoint);
+
+			totalDistance = startPoint.distanceTo(secondStartPoint);
+
+			int size = notVisitedCities.size();
+			for (int i = 0; i < size / 2; i++) {
+				currentPoint = findNearestPoint(notVisitedCities, currentPoint);
+				orders.add(currentPoint.getOrder());
+				notVisitedCities.remove(currentPoint);
+			}
+
+			Collections.reverse(orders);
+			currentPoint = startPoint;
+
+			while (notVisitedCities.size() != 0) {
+				currentPoint = findNearestPoint(notVisitedCities, currentPoint);
+				orders.add(currentPoint.getOrder());
+				notVisitedCities.remove(currentPoint);
+			}
+
+			totalDistance += cities.get(orders.get(0)).distanceTo(cities.get(orders.get(orders.size() - 1)));
+
+			route.clear();
+			for (int i = 0; i < orders.size(); i++) {
+				route.add(cities.get(orders.get(i)));
+			}
+			int distance;
+
+			distance = 0;
+			for (int i = 0; i < 1000000; i++) {
+				optimize();
+				int dis = totalDistanceCalculator(route);
+				if (distance != dis) {
+					if (dis < totalDistance) {
+						distance = dis;
+						totalDistance = dis;
+					}
+				} else {
+					break;
+				}
+			}
+
+			for (int i = 0; i < orders.size(); i++) {
+				Repository.addCity(route.get(i));
+			}
+
+			SimulatedAnnealing annealing = new SimulatedAnnealing();
+			annealing.simulation();
+
+			distance = 0;
+			for (int i = 0; i < 1000000; i++) {
+				optimize();
+				int dis = totalDistanceCalculator(route);
+				if (distance != dis) {
+					if (dis < totalDistance || distance == 0) {
+						distance = dis;
+						totalDistance = dis;
+					}
+				} else {
+					break;
+				}
+			}
+
+			long stopTime = System.currentTimeMillis();
+			long elapsedTime = stopTime - startTime;
+
+			// System.out.println(elapsedTime);
+
+			PrintWriter out = new PrintWriter("output.txt", "UTF-8");
+
+			// System.out.println(annealing.getBest().getDistance());
+			out.println(annealing.getBest().getDistance());
+
+			for (int i = 0; i < Repository.getCities().size() - 1; i++) {
+				out.println(Repository.getCities().get(i).getOrder());
+				// System.out.println(Repository.getCities().get(i).getOrder());
+			}
+			out.print(Repository.getCities().get(Repository.getCities().size() - 1).getOrder());
+			out.close();
 		}
 
-		
-		SimulatedAnnealing annealing = new SimulatedAnnealing();
-		annealing.simulation();
-		System.out.println("Final approximated solution's distance is: " + annealing.getBest().getDistance());
-		
-		for (int i = 0; i < Repository.getCities().size(); i++) {
-			System.out.println(Repository.getCities().get(i).getOrder());
+	}
+
+	// This is brute force TSP solver. this function's time complexity is n! and
+	// just works for small inputs recursively this is not usable for large inputs
+	private static void bruteForceTSP(ArrayList<City> notVisitedCities) {
+		@SuppressWarnings("unchecked")
+		ArrayList<City> notVisitedCitiesTemp = (ArrayList<City>) notVisitedCities.clone();
+		int n = notVisitedCitiesTemp.size();
+		for (int i = 0; i < n; i++) {
+			City tempCity = notVisitedCitiesTemp.get(i);
+
+			if (tempCity != null) {
+				route.add(tempCity);
+				notVisitedCitiesTemp.remove(i);
+			}
+
+			if (notVisitedCitiesTemp.size() == 0) {
+				int tot = totalDistanceCalculator(route);
+				if (tot < totalDistance || totalDistance == 0) {
+					totalDistance = tot;
+					orders.clear();
+					for (int j = 0; j < route.size(); j++) {
+						orders.add(route.get(j).getOrder());
+					}
+				}
+			} else {
+				bruteForceTSP(notVisitedCitiesTemp);
+			}
+
+			notVisitedCitiesTemp.add(i, tempCity);
+			route.remove(route.size() - 1);
 		}
-		
-		writer.close();
+
 	}
 
 	public static void optimize() {
@@ -199,6 +268,8 @@ public class main {
 		}
 	}
 
+	// this function finds the closest city to given current point from cities array
+	// list
 	private static City findNearestPoint(ArrayList<City> cities, City currentPoint) {
 		int distance = Integer.MAX_VALUE;
 		City mid = null;
@@ -213,6 +284,7 @@ public class main {
 		return mid;
 	}
 
+	// this function returns the string is numeric or not
 	public static boolean isNumeric(String str) {
 		try {
 			Double.parseDouble(str);
@@ -222,6 +294,7 @@ public class main {
 		}
 	}
 
+	// This function returns the total distance of the tour
 	public static int totalDistanceCalculator(ArrayList<City> cities) {
 		int distance = 0;
 
@@ -234,6 +307,8 @@ public class main {
 		return distance;
 	}
 
+	// This function swap 4 city on route to try find a short distance and create
+	// new chances
 	public static void swap4Route() {
 		int size = route.size();
 
@@ -256,3 +331,4 @@ public class main {
 		}
 	}
 }
+

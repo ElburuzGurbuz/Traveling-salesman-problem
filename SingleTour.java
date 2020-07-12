@@ -1,8 +1,5 @@
-package algooooo;
-
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class SingleTour {
@@ -13,6 +10,7 @@ public class SingleTour {
 	public SingleTour() {
 		for (int i = 0; i < Repository.getNumberOfCities(); ++i)
 			tour.add(null);
+		
 	}
 
 	public SingleTour(List<City> tour) {
@@ -57,13 +55,13 @@ public class SingleTour {
 	public ArrayList<City> getTour() {
 		return this.tour;
 	}
-	
+
 	public void addCity(City c) {
 		tour.add(c);
 	}
-	
+
 	public void addCityOn(int j, City c) {
-		tour.add(j,c);
+		tour.add(j, c);
 	}
 
 	public void generateIndividual() {
@@ -98,7 +96,7 @@ public class SingleTour {
 
 	public void remove(int i) {
 		tour.remove(i);
-		
+
 	}
 
 	/**
@@ -111,6 +109,7 @@ public class SingleTour {
 	/**
 	 * @param tour the tour to set
 	 */
+	@SuppressWarnings("unchecked")
 	public void setTour(ArrayList<City> tour) {
 		this.tour = (ArrayList<City>) tour.clone();
 	}

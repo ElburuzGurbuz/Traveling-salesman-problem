@@ -1,4 +1,3 @@
-package algooooo;
 
 public class City {
 	int x;
@@ -24,12 +23,20 @@ public class City {
 		return this.y;
 	}
 
+	// Calculates the distance between this city to argument city
 	public int distanceTo(City city) {
-		int xDistance = Math.abs(getX() - city.getX());
-		int yDistance = Math.abs(getY() - city.getY());
-		int distance = (int) Math.round(Math.sqrt((xDistance * xDistance) + (yDistance * yDistance)));
 
-		return distance;
+		double x1 = getX() * 1.0;
+		double y1 = getY() * 1.0;
+		double x2 = city.getX() * 1.0;
+		double y2 = city.getY() * 1.0;
+
+		double ac = Math.abs(y2 - y1);
+		double cb = Math.abs(x2 - x1);
+
+		int ret = (int) Math.round(Math.hypot(ac, cb));
+		return ret;
+
 	}
 
 	@Override
